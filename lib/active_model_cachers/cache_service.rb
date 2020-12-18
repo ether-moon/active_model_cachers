@@ -29,7 +29,7 @@ module ActiveModelCachers
 
         ActiveRecord::Extension.global_callbacks.instance_exec do
           on_nullify(class_name) do |nullified_column, get_ids|
-            get_ids.call.each{|s| clean.call(s) } if nullified_column == column
+            get_ids.call.each { |s| clean.call(s) } if nullified_column == column
           end
 
           after_touch1(class_name) do
@@ -57,7 +57,7 @@ module ActiveModelCachers
           end
 
           before_delete2(class_name) do |_, model|
-            clean_ids.each{|s| clean.call(s.call) }
+            clean_ids.each { |s| clean.call(s.call) }
             clean_ids = []
           end
 
@@ -106,9 +106,28 @@ module ActiveModelCachers
     end
 
     def get_without_cache(binding, attr)
+      clean_updated_association_cache(binding: binding, attr: attr) unless cache_from_loaded_associations
+
       query = get_query(binding, attr)
       return binding ? binding.instance_exec(@id, &query) : query.call(@id) if @id and query.parameters.size == 1
       return binding ? binding.instance_exec(&query) : query.call
+    end
+
+    def clean_updated_association_cache(binding: nil, attr: nil)
+      reflection_name = attr&.name&.to_sym
+      return unless reflection_name
+
+      cacher_klass = ::ActiveModelCachers::ActiveRecord::Cacher.get_cacher_klass(binding.class)
+      reflection = binding&.class&.reflect_on_association(reflection_name)
+      return unless cacher_klass.attributes.include?(reflection&.name)
+
+      unless binding.send(:association_instance_get, reflection_name).nil?
+        binding.send(:association_instance_set, reflection_name, nil)
+      end
+    end
+
+    def cache_from_loaded_associations
+      ActiveModelCachers.config.cache_from_loaded_associations
     end
 
     def raw_to_cache_data(raw)

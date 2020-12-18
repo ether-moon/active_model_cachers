@@ -42,6 +42,31 @@ class CacheAtHasOneTest < BaseTest
     assert_cache('active_model_cachers_Profile_by_user_id_2' => user.profile)
   end
 
+  def test_instance_cacher_to_use_loaded_associations_without_association_cache
+    user = User.find_by(name: 'John2')
+    profile = user.profile
+
+    ActiveModelCachers.config.stub :cache_from_loaded_associations, false do
+    assert_queries(1){ assert_equal 10, user.cacher.profile.point }
+    assert_cache('active_model_cachers_Profile_by_user_id_2' => profile)
+    end
+
+    assert_queries(0){ assert_equal 10, user.cacher.profile.point }
+    assert_cache('active_model_cachers_Profile_by_user_id_2' => profile)
+  end
+
+  def test_instance_cacher_to_use_preloaded_associations_without_association_cache
+    user = User.includes(:profile).find_by(name: 'John2')
+
+    ActiveModelCachers.config.stub :cache_from_loaded_associations, false do
+    assert_queries(1){ assert_equal 10, user.cacher.profile.point }
+    assert_cache('active_model_cachers_Profile_by_user_id_2' => user.profile)
+    end
+
+    assert_queries(0){ assert_equal 10, user.cacher.profile.point }
+    assert_cache('active_model_cachers_Profile_by_user_id_2' => user.profile)
+  end
+
   # ----------------------------------------------------------------
   # ● Create
   # ----------------------------------------------------------------
@@ -75,6 +100,29 @@ class CacheAtHasOneTest < BaseTest
 
     assert_queries(1){ user.profile = profile; user.save }
     assert_cache({})
+
+    assert_queries(0){ assert_equal profile, user.cacher.profile }
+    assert_cache('active_model_cachers_Profile_by_user_id_-1' => profile)
+  ensure
+    user.delete if user
+    profile.delete if profile
+  end
+
+  def test_assign_association_without_association_cache
+    user = User.create(id: -1)
+    profile = Profile.create(id: -2, point: 3)
+
+    assert_queries(1){ assert_nil user.cacher.profile }
+    assert_queries(0){ assert_nil user.cacher.profile }
+    assert_cache('active_model_cachers_Profile_by_user_id_-1' => ActiveModelCachers::NilObject)
+
+    assert_queries(1){ user.profile = profile; user.save }
+    assert_cache({})
+
+    ActiveModelCachers.config.stub :cache_from_loaded_associations, false do
+      assert_queries(1){ assert_equal profile, user.cacher.profile }
+      assert_cache('active_model_cachers_Profile_by_user_id_-1' => profile)
+    end
 
     assert_queries(0){ assert_equal profile, user.cacher.profile }
     assert_cache('active_model_cachers_Profile_by_user_id_-1' => profile)
