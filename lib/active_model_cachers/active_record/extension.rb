@@ -31,7 +31,7 @@ module ActiveModelCachers
 
         if class_name
           with_id = (expire_by.is_a?(Symbol) || query.parameters.size == 1)
-          service_klass.define_callback_for_cleaning_cache(class_name, *infos, with_id, on: on)
+          service_klass.define_callback_for_cleaning_cache(class_name, *infos, with_id, on: on, primary_key: primary_key)
         end
 
         return service_klass

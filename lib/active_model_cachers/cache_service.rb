@@ -19,11 +19,12 @@ module ActiveModelCachers
       end
 
       @@column_value_cache = ActiveModelCachers::ColumnValueCache.new
-      def define_callback_for_cleaning_cache(class_name, column, foreign_key, with_id, on: nil)
+
+      def define_callback_for_cleaning_cache(class_name, column, foreign_key, with_id, on: nil, primary_key: nil)
         return if @callbacks_defined
         @callbacks_defined = true
 
-        clean = ->(id){ clean_at(with_id ? id : nil) }
+        clean = ->(id) { clean_at(with_id ? id : nil) }
         clean_ids = []
         fire_on = Array(on) if on
 
@@ -33,7 +34,7 @@ module ActiveModelCachers
           end
 
           after_touch1(class_name) do
-            clean.call(@@column_value_cache.add(self.class, class_name, id, foreign_key, self).call)
+            clean.call(@@column_value_cache.add(self.class, class_name, send(primary_key || :id), foreign_key, self).call)
           end
 
           after_touch2(class_name) do
@@ -43,9 +44,9 @@ module ActiveModelCachers
           after_commit1(class_name) do
             next if fire_on and not transaction_include_any_action?(fire_on)
             changed = column ? previous_changes.key?(column) : previous_changes.present?
-             if changed || destroyed?
-               clean.call(@@column_value_cache.add(self.class, class_name, id, foreign_key, self).call)
-             end
+            if changed || destroyed?
+              clean.call(@@column_value_cache.add(self.class, class_name, send(primary_key || :id), foreign_key, self).call)
+            end
           end
 
           after_commit2(class_name) do

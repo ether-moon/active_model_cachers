@@ -35,4 +35,6 @@ class User < ActiveRecord::Base
   cache_at :has_achievements_by_belongs_to_many?, ->(_){ achievements_by_belongs_to_many.exists? }, expire_by: :achievements_by_belongs_to_many
 
   cache_at :email_valid?, ->(email){ ValidEmail2::Address.new(email).valid_mx? }, primary_key: :email
+  cache_at :email_valid2?, ->(email){ ValidEmail2::Address.new(email).valid_mx? }, primary_key: :email, expire_by: "User"
+  cache_at :email_valid3?, ->(email){ ValidEmail2::Address.new(email).valid_mx? }, primary_key: :email, expire_by: "User#name"
 end
