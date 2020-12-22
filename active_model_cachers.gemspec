@@ -32,8 +32,8 @@ Gem::Specification.new do |spec|
     'source_code_uri'   => 'https://github.com/khiav223577/active_model_cachers',
     'documentation_uri' => 'https://www.rubydoc.info/gems/active_model_cachers',
     'bug_tracker_uri'   => 'https://github.com/khiav223577/active_model_cachers/issues',
+    'allowed_push_host' => 'https://rubygems.pkg.github.com/daangn'
   }
-
   spec.add_development_dependency 'bundler', '>= 1.17', '< 3.x'
   spec.add_development_dependency "rake", "~> 12.0"
   spec.add_development_dependency "sqlite3", "~> 1.3"
